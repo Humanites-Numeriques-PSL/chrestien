@@ -45,7 +45,7 @@ if __name__ == "__main__":
                 out.write(line["token"] + " ")
 
 
-    myjson = open("function_words.json", "r")
+    myjson = open("function_words_old-french_of3c.json", "r")
     fw = [f[0] for f in json.load(myjson)]
 
     for doc in data:
