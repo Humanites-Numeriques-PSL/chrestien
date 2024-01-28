@@ -1,0 +1,185 @@
+---
+title: "Philologie computationnelle - TP Chrétien"
+author: "JBC & FC"
+date: "2023-2024"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+
+```{r}
+source("functions.R")
+```
+
+
+# Data 
+
+## Load texts
+
+```{r}
+data = t(as.matrix(read.csv("chrestien_fw_abs.csv", row.names = 1, header = TRUE)[, c(-1,-2)]))
+auts = read.csv("chrestien_fw_abs.csv", row.names = 1, header = TRUE)[, 1]
+data = data[rowSums(data) > 0,]
+colnames(data) = gsub(pattern = "000", replacement = "k", colnames(data))
+data_abs_save = data
+```
+
+
+## Features extraction, culling and selection
+
+Now, we will use survey method to keep only reliable features,
+
+```{r}
+# select = selection(data, z = 1.645)
+# select = select[,4]
+# # Get relative frequencies
+# data_abs_save = data
+# data = relativeFreqs(data)
+# # keep only reliable features
+# data = data[select,]
+```
+
+
+# Dimensionality reduction
+
+## Principal component analysis (PCA)
+
+Let's use `FactoMineR`.
+
+```{r, fig.width=10, fig.height=10, dpi=45}
+# Load FactoMineR and factoextra for better visuals
+library('FactoMineR')
+library('factoextra')
+# And compute ACP. As the function expects individuals as lines and variables as columns, I'm transposing it
+myCA = CA(t(data)[1:79,], graph = FALSE)
+```
+
+I can now look at the significance of my axes.
+
+```{r}
+myCA$eig
+```
+or plot it
+```{r}
+barplot(myCA$eig[,2], main="%age of var", names.arg=1:nrow(myCA$eig))
+```
+Contribution:
+```{r}
+sort(myCA$col$contrib[,1], decreasing = TRUE)
+```
+
+```{r, fig.width=10, fig.height=10, dpi=45}
+#fviz_ca_row(myCA, geom=c("text"), labelsize=2)
+fviz_ca_row(myCA, col.row = sub("\\_.*", "", rownames(myCA$row$coord)), title="", geom=c("point"), labelsize=2)
+#fviz_ca_col(myCA, col.col = sub("\\_.*", "", rownames(myCA$col$coord)), title="", geom=c("point", "text"), labelsize=2)
+```
+
+
+# Clustering
+
+## Selecting features
+
+## Weighting
+
+In oppositions to analyses like Correspondance analysis, that perform their own kind of 'centering' of the variables, here, we will do two types of normalisations:
+
+- variables (rows) with z-scores;
+- individuals (columns) with vector length normalisation (Euclidean norm).
+
+```{r}
+data = normalisations(data)
+```
+
+And let's go.
+
+## Clustering methods: hierarchical clustering
+
+
+```{r, fig.width=20, fig.height=10, dpi=45}
+library(cluster)
+maCAH = agnes(t(data), metric = "manhattan", method="ward")
+#plot(maCAH, which.plots = 2)
+# Et une fonction un peu plus esthétique
+maCAH_save = maCAH
+cahPlotCol(maCAH, k = 3)
+```
+
+
+# Class description
+
+
+### Creating groups: cutting an AHC
+
+If we want to describe a classification, in terms of the specificities of each group, several solutions are possible. We can start from supervised clustering from K-means or K-medoids, or from the cut of a CAH.
+
+The number of classes should be chosen according to the dendrogram, and a height graph can be used (corresponding to the heights at which the branches of the dendrogram are separated).
+
+
+```{r}
+maCAH = maCAH_save
+maCAH2 = as.hclust(maCAH)
+plot(maCAH2$height, type="h", ylab="heights")
+#cahPlotCol(maCAH, k = 4)
+```
+
+
+And let's cut
+
+```{r}
+#Je découpe en classes
+classes = cutree(maCAH, k = "4") # ="4"
+#J'ajoute les classes à mon tableau
+myClassif = t(data)
+myClassif = cbind(as.data.frame(myClassif), as.factor(classes))
+colnames(myClassif[length(myClassif)])[] = "Classes"
+```
+
+
+```{r}
+myClassif[length(myClassif)]
+```
+
+### Describing classes
+
+Let's try to understand now what put _Istorietta_ and _Novella_ in the same class.
+
+
+Let's do a v-test,
+
+```{r, fig.width=20, fig.height=10, dpi=45}
+#Je charge FactoMineR
+library(FactoMineR)
+#Et je décrit les classes
+mesClasses = catdes(myClassif, num.var = length(myClassif))
+# $\eta^2$
+mesClasses$quanti.var[1:20,]
+# v-test pour la classe 1
+mesClasses$quanti$`2`
+plot(mesClasses, level = 0.01, barplot = TRUE)
+```
+
+```{r}
+classesDesc(maCAH, data, k = 4)
+```
+
+It is also possible to use other computations of specificities, like Lafon (1984), that needs absolute frequencies.
+
+```{r}
+# install.packages("textometry")
+freq_abs = data_abs_save
+# On splitte le corpus selon les classes
+freq_abs_class = matrix(nrow = nrow(freq_abs), ncol = length(unique(classes)), dimnames = list(rownames(freq_abs), unique(classes)))
+for(i in 1:length(unique(classes))){
+  # sum the values for each member of the class
+  freq_abs_class[, i] = rowSums(freq_abs[, classes == i])
+}
+specs = textometry::specificities(freq_abs_class)
+# and now we can look at the specificities for class 1 
+# positive or negative
+head(sort(specs[, 2], decreasing = TRUE))
+head(sort(specs[, 2]))
+```
+
+And one can use other varieties of non-parametric tests, such as the Mann-Whitney test, for example, to compare two populations...
