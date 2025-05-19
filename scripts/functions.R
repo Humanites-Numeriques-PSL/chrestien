@@ -418,7 +418,7 @@ cahPlotCol = function(x, main="Plot", xlab = paste(ncol(x$data), "features"), k 
   labels = vector(length = length(x$order.lab))
   labels[grep("GerbM_", x$order.lab)] = "darkgreen"
   labels[grep("ChrTr_", x$order.lab)] = "red"
-  #labels[grep("D+M_", x$order.lab)] = "pink"
+  labels[grep("WauDen_", x$order.lab)] = "pink"
   labels[grep("JnRen_", x$order.lab)] = "orange"
   labels[grep("ANO_", x$order.lab)] = "grey"
   labels[grep("ChrX_", x$order.lab)] = "lightblue"

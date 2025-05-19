@@ -5,8 +5,17 @@ import glob
 if __name__ == "__main__":
 
     print("running")
+
+    prefix = "./v2/"
+    postfix = "unseen/"
     # Parse Pyrrha data to files
-    files = glob.glob("lemmat_src/*")
+    files = glob.glob(prefix + "lemmat_src/"+postfix+"*")
+
+    prefix = prefix + postfix
+
+    for dir in [prefix + 'LEMMA', prefix + "POS", prefix + "TXT", prefix + "MOTIFS"]:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
 
     data = []
 
@@ -15,7 +24,7 @@ if __name__ == "__main__":
 
         with open(file, 'r') as f:
             f.readline()
-            myText = {"textID": file.split("/")[1].rstrip().split("-")[0],
+            myText = {"textID": file.split("/")[-1].rstrip()[:-8],
                       "content": []
                       }
             for line in f.readlines():
@@ -28,19 +37,19 @@ if __name__ == "__main__":
         data.append(myText)
 
     for doc in data:
-        with open("LEMMA/"+doc["textID"], 'w') as out:
+        with open(prefix + "LEMMA/"+doc["textID"], 'w') as out:
             for line in doc["content"]:
                 out.write(line["lemma"] + " ")
 
     for doc in data:
-        with open("POS/"+doc["textID"], 'w') as out:
+        with open(prefix + "POS/"+doc["textID"], 'w') as out:
             for line in doc["content"]:
                 if not line["pos"].startswith("PON"):
                     out.write(line["pos"] + " ")
 
 
     for doc in data:
-        with open("TXT/"+doc["textID"], 'w') as out:
+        with open(prefix + "TXT/"+doc["textID"], 'w') as out:
             for line in doc["content"]:
                 out.write(line["token"] + " ")
 
@@ -49,7 +58,7 @@ if __name__ == "__main__":
     fw = [f[0] for f in json.load(myjson)]
 
     for doc in data:
-        with open("MOTIFS/"+doc["textID"], 'w') as out:
+        with open(prefix + "MOTIFS/"+doc["textID"], 'w') as out:
             for line in doc["content"]:
                 if line["lemma"] in fw:
                     out.write(line["lemma"] + " ")

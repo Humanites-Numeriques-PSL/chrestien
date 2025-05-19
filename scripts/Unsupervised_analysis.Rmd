@@ -3,9 +3,9 @@ title: "Philologie computationnelle - TP Chrétien"
 author: "JBC & FC"
 date: "2023-2024"
 output:
-  pdf_document: default
-  word_document: default
   html_document: default
+  word_document: default
+  pdf_document: default
 ---
 
 
@@ -129,7 +129,7 @@ And let's cut
 
 ```{r}
 #Je découpe en classes
-classes = cutree(maCAH, k = "4") # ="4"
+classes = cutree(maCAH, k = "3")
 #J'ajoute les classes à mon tableau
 myClassif = t(data)
 myClassif = cbind(as.data.frame(myClassif), as.factor(classes))
@@ -142,9 +142,6 @@ myClassif[length(myClassif)]
 ```
 
 ### Describing classes
-
-Let's try to understand now what put _Istorietta_ and _Novella_ in the same class.
-
 
 Let's do a v-test,
 
@@ -161,7 +158,7 @@ plot(mesClasses, level = 0.01, barplot = TRUE)
 ```
 
 ```{r}
-classesDesc(maCAH, data, k = 4)
+classesDesc(maCAH, data, k = 3)
 ```
 
 It is also possible to use other computations of specificities, like Lafon (1984), that needs absolute frequencies.
